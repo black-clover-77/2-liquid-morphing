@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Liquid Morphing | VishwaNova 2026</title>
+    <meta name="description" content="Interactive liquid mercury blobs that merge, split, and react to your cursor." />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../shared/experience-kit.css" />
+    <link rel="stylesheet" href="../shared/mobile.css" />
+    <link rel="stylesheet" href="../shared/soundkit.css" />
+    <link rel="stylesheet" href="../shared/fx-kit.css" />
+    <link rel="stylesheet" href="../shared/engagement-kit.css" />
+  </head>
+  <body>
+    <div id="loader">
+      <div class="loader-content">
+        <div class="loader-blob"></div>
+        <p class="loader-text">Loading Mercury Lab...</p>
+      </div>
+    </div>
+
+    <audio id="bg-audio" loop src="https://cdn.pixabay.com/audio/2022/03/10/audio_c8c8a1d2e1.mp3?v=2"></audio>
+    <audio id="merge-sound" src="https://cdn.pixabay.com/audio/2022/03/10/audio_c8c8a1d2e1.mp3"></audio>
+    <audio id="split-sound" src="https://cdn.pixabay.com/audio/2022/03/10/audio_c8c8a1d2e1.mp3"></audio>
+
+    <button id="audio-toggle" class="glass-btn" aria-label="Toggle audio"><i class="fas fa-volume-up"></i></button>
+    <button id="fullscreen-btn" class="glass-btn" aria-label="Fullscreen"><i class="fas fa-expand"></i></button>
+    <button id="screenshot-btn" class="glass-btn" aria-label="Screenshot"><i class="fas fa-camera"></i></button>
+    <button id="settings-btn" class="glass-btn" aria-label="Settings"><i class="fas fa-cog"></i></button>
+
+    <svg style="position: absolute; width: 0; height: 0">
+      <defs>
+        <filter id="metaball">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="18" result="blur" />
+          <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 25 -10" result="metaball" />
+          <feComposite in="SourceGraphic" in2="metaball" operator="atop" />
+        </filter>
+      </defs>
+    </svg>
+
+    <main id="app">
+      <div id="blob-container"></div>
+
+      <div id="temp-gauge">
+        <div class="gauge-label">TEMP</div>
+        <div class="gauge-bar"><div id="gauge-fill"></div></div>
+        <div id="temp-value">20°C</div>
+      </div>
+
+      <div id="stats-panel" class="glass-panel">
+        <div class="stat-item">
+          <span class="stat-label"><i class="fas fa-circle"></i> Blobs</span>
+          <span class="stat-value" id="blob-count">8</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label"><i class="fas fa-compress-arrows-alt"></i> Merges</span>
+          <span class="stat-value" id="merge-count">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label"><i class="fas fa-tachometer-alt"></i> Viscosity</span>
+          <span class="stat-value" id="viscosity-val">50%</span>
+        </div>
+      </div>
+
+      <div id="controls">
+        <button id="freeze-btn"><i class="fas fa-snowflake"></i> Freeze</button>
+        <button id="scatter-btn"><i class="fas fa-wind"></i> Scatter</button>
+        <button id="add-btn"><i class="fas fa-plus"></i> Add Blob</button>
+        <button id="split-btn"><i class="fas fa-cut"></i> Split</button>
+        <button id="rainbow-btn"><i class="fas fa-rainbow"></i> Rainbow</button>
+        <button id="export-btn"><i class="fas fa-download"></i> Export GIF</button>
+      </div>
+
+      <h1 id="title">LIQUID MERCURY LAB</h1>
+      <p id="subtitle">Drag blobs · Watch them merge · Click to freeze · Press ? for shortcuts</p>
+
+      <!-- Settings Panel -->
+      <div id="settings-panel" class="glass-panel" style="display: none;">
+        <h3><i class="fas fa-sliders-h"></i> Lab Settings</h3>
+        <div class="setting-group">
+          <label>Gravity: <span id="gravity-val">1.0x</span></label>
+          <input type="range" id="gravity-slider" min="0" max="2" value="1" step="0.1">
+        </div>
+        <div class="setting-group">
+          <label>Viscosity: <span id="viscosity-slider-val">50%</span></label>
+          <input type="range" id="viscosity-slider" min="0" max="100" value="50" step="5">
+        </div>
+        <div class="setting-group">
+          <label>Blob Size: <span id="size-val">Medium</span></label>
+          <input type="range" id="size-slider" min="30" max="150" value="70" step="10">
+        </div>
+        <div class="setting-group">
+          <label>Metaball Blur: <span id="blur-val">18px</span></label>
+          <input type="range" id="blur-slider" min="5" max="30" value="18" step="1">
+        </div>
+        <div class="setting-group">
+          <label>
+            <input type="checkbox" id="trails-toggle">
+            Particle Trails
+          </label>
+        </div>
+        <div class="setting-group">
+          <label>
+            <input type="checkbox" id="sound-effects-toggle" checked>
+            Sound Effects
+          </label>
+        </div>
+        <button id="reset-lab-btn" class="btn-primary">Reset Lab</button>
+        <button id="close-settings-btn" class="btn-secondary">Close</button>
+      </div>
+
+      <!-- Preset Patterns -->
+      <div id="patterns-panel" class="glass-panel">
+        <h4>Preset Patterns</h4>
+        <div class="pattern-grid">
+          <button class="pattern-btn" data-pattern="circle"><i class="fas fa-circle"></i> Circle</button>
+          <button class="pattern-btn" data-pattern="square"><i class="fas fa-square"></i> Square</button>
+          <button class="pattern-btn" data-pattern="heart"><i class="fas fa-heart"></i> Heart</button>
+          <button class="pattern-btn" data-pattern="star"><i class="fas fa-star"></i> Star</button>
+          <button class="pattern-btn" data-pattern="spiral"><i class="fas fa-yin-yang"></i> Spiral</button>
+          <button class="pattern-btn" data-pattern="wave"><i class="fas fa-water"></i> Wave</button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="github-badge">
+      <a href="https://github.com/AkshatRock/weboreel-hackathon" target="_blank"><i class="fas fa-star"></i> GitHub Repo</a>
+      <span>VishwaNova 2026</span>
+    </footer>
+
+    <!-- Keyboard Shortcuts Help -->
+    <div id="shortcuts-help" style="display: none;">
+      <div class="shortcuts-panel glass-panel">
+        <h3>Keyboard Shortcuts</h3>
+        <ul>
+          <li><kbd>S</kbd> <span>Screenshot</span></li>
+          <li><kbd>F</kbd> <span>Fullscreen</span></li>
+          <li><kbd>M</kbd> <span>Mute/Unmute</span></li>
+          <li><kbd>Space</kbd> <span>Freeze/Unfreeze</span></li>
+          <li><kbd>A</kbd> <span>Add Blob</span></li>
+          <li><kbd>R</kbd> <span>Rainbow Mode</span></li>
+          <li><kbd>C</kbd> <span>Clear All</span></li>
+          <li><kbd>?</kbd> <span>Toggle Help</span></li>
+        </ul>
+        <button id="close-help-btn" class="btn-primary">Close</button>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="../shared/soundkit.js" defer></script>
+    <script src="../shared/experience-kit.js" defer></script>
+    <script src="../shared/engagement-kit.js" defer></script>
+    <script src="../shared/experience-configs-1-21.js" defer></script>
+    <script src="../shared/fx-kit.js" defer></script>
+    <script src="script.js"></script>
+  
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const parts = location.pathname.split("/").filter(Boolean);
+        const slug = parts[parts.length - 2] || "";
+        const cfg = window.WeboReelsExperienceConfigs1to21?.[slug] || { title: document.title };
+        window.WeboReelsExperienceKit?.init?.(cfg);
+      });
+    </script>
+  </body>
+</html>
